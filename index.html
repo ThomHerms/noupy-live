@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Noupy â€” Suivi en direct</title>
+<title>Noupy — Suivi en direct</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
   :root { --navy:#1B4F9C; --ink:#1A1A2E; --bg:#F5F7FA; --sub:#64748B; --border:#E2E8F0; }
@@ -54,47 +54,47 @@
   </header>
 
   <div class="card dest">
-    <div class="flag">ðŸ</div>
+    <div class="flag">🏁</div>
     <div>
       <div class="to" id="driverTo">En route vers</div>
-      <div class="name" id="destName">â€¦</div>
+      <div class="name" id="destName">…</div>
     </div>
-    <div class="maj" id="updated">connexionâ€¦</div>
+    <div class="maj" id="updated">connexion…</div>
   </div>
 
   <div id="map"></div>
 
   <div class="card stats">
-    <div class="stat"><b id="eta">â€”</b><span>arrivÃ©e prÃ©vue</span></div>
-    <div class="stat"><b id="speed">â€”</b><span>vitesse</span></div>
-    <div class="stat"><b id="dist">â€”</b><span>Ã  vol d'oiseau</span></div>
+    <div class="stat"><b id="eta">—</b><span>arrivée prévue</span></div>
+    <div class="stat"><b id="speed">—</b><span>vitesse</span></div>
+    <div class="stat"><b id="dist">—</b><span>à vol d'oiseau</span></div>
   </div>
 
   <div class="ovpromo" style="max-width:none;margin-top:14px;">
-    <b>ðŸ¶ Vous aussi, adoptez Noupy</b>
+    <b>🐶 Vous aussi, adoptez Noupy</b>
     <span>Le copilote intelligent qui vous guide, vous alerte et rassure
-    vos proches : trafic en temps rÃ©el, radars, carburant au meilleur prix,
+    vos proches : trafic en temps réel, radars, carburant au meilleur prix,
     partage de trajet en direct. 100&nbsp;% gratuit.</span>
   </div>
 
-  <footer>Suivi partagÃ© avec Noupy Â· position rafraÃ®chie toutes les 10 s</footer>
+  <footer>Suivi partagé avec Noupy · position rafraîchie toutes les 10 s</footer>
 </div>
 
 <div class="overlay" id="stateOverlay">
   <div class="ovcard">
     <img src="noupy.png" alt="Noupy" style="width:120px;height:120px;object-fit:contain;">
     <div class="big" id="ovEmoji"></div>
-    <h2 id="ovTitle">Connexion au trajetâ€¦</h2>
+    <h2 id="ovTitle">Connexion au trajet…</h2>
     <p id="ovText">Un instant, Noupy cherche la position.</p>
     <div class="ovextra hidden" id="ovExtra"></div>
   </div>
   <div class="ovpromo hidden" id="ovPromo">
-    <b>ðŸ¶ Vous aussi, adoptez Noupy</b>
+    <b>🐶 Vous aussi, adoptez Noupy</b>
     <span>Le copilote intelligent qui vous guide, vous alerte et rassure
-    vos proches : trafic en temps rÃ©el, radars, carburant au meilleur prix,
+    vos proches : trafic en temps réel, radars, carburant au meilleur prix,
     partage de trajet en direct. 100&nbsp;% gratuit.</span>
   </div>
-  <div class="ovsign">NOUPY <span>Â· Votre copilote intelligent</span></div>
+  <div class="ovsign">NOUPY <span>· Votre copilote intelligent</span></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -105,12 +105,12 @@ const code = new URLSearchParams(location.search).get('t');
 
 const map = L.map('map', { zoomControl:false }).setView([46.6, 2.4], 6);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-  { attribution:'Â© OpenStreetMap' }).addTo(map);
+  { attribution:'© OpenStreetMap' }).addTo(map);
 
 const carIcon = L.divIcon({ className:'', iconSize:[36,36], iconAnchor:[18,18],
-  html:'<div style="width:36px;height:36px;border-radius:50%;background:#1B4F9C;border:4px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:16px;">ðŸš—</div>' });
+  html:'<div style="width:36px;height:36px;border-radius:50%;background:#1B4F9C;border:4px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:16px;">🚗</div>' });
 const flagIcon = L.divIcon({ className:'', iconSize:[34,34], iconAnchor:[6,30],
-  html:'<div style="font-size:28px;text-shadow:0 1px 3px rgba(0,0,0,.35);">ðŸ</div>' });
+  html:'<div style="font-size:28px;text-shadow:0 1px 3px rgba(0,0,0,.35);">🏁</div>' });
 
 let marker = null, flag = null, destLine = null, fitted = false;
 const trail = L.polyline([], { color:'#1B4F9C', weight:4, opacity:.75 }).addTo(map);
@@ -135,15 +135,15 @@ function kmStr(m) {
 
 let misses = 0;
 async function tick() {
-  if (!code) { overlay('ðŸ¤”','Lien incomplet',"Ce lien ne contient pas de code de trajet."); return; }
+  if (!code) { overlay('🤔','Lien incomplet',"Ce lien ne contient pas de code de trajet."); return; }
   try {
     const r = await fetch(`${SUPA}/rest/v1/live_trips?id=eq.${encodeURIComponent(code)}&select=*`,
       { headers: { apikey: KEY } });
     const rows = await r.json();
     if (!Array.isArray(rows) || rows.length === 0) {
       misses++;
-      if (misses >= 2) overlay('ðŸ','Partage terminÃ©',
-        "Ce lien de suivi n'est plus actif : le trajet est terminÃ© ou le partage a Ã©tÃ© arrÃªtÃ©.",
+      if (misses >= 2) overlay('🏁','Partage terminé',
+        "Ce lien de suivi n'est plus actif : le trajet est terminé ou le partage a été arrêté.",
         { promo:true });
       return;
     }
@@ -153,39 +153,39 @@ async function tick() {
       const qui = t.driver || 'Votre proche';
       const d = new Date(t.updated_at);
       const heure = `${d.getHours()}h${String(d.getMinutes()).padStart(2,'0')}`;
-      overlay('ðŸŽ‰','Bien arrivÃ© !',
-        t.dest ? `${qui} est bien arrivÃ© Ã  ${t.dest}. Tout va bien !`
-               : `${qui} est bien arrivÃ© Ã  destination. Tout va bien !`,
-        { promo:true, extra:`ðŸ ArrivÃ©e vers ${heure}` });
+      overlay('🎉','Bien arrivé !',
+        t.dest ? `${qui} est bien arrivé à ${t.dest}. Tout va bien !`
+               : `${qui} est bien arrivé à destination. Tout va bien !`,
+        { promo:true, extra:`🏁 Arrivée vers ${heure}` });
       return;
     }
-    // Partage muet depuis plus de 3 min (app fermÃ©e sans arrÃªter le
-    // partage) : on affiche la fin plutÃ´t qu'une carte figÃ©e
+    // Partage muet depuis plus de 3 min (app fermée sans arrêter le
+    // partage) : on affiche la fin plutôt qu'une carte figée
     const rowAge = Math.round((Date.now() - new Date(t.updated_at).getTime())/1000);
     if (rowAge > 180) {
-      overlay('ðŸ','Partage terminÃ©',
-        `Le partage s'est interrompu (derniÃ¨re position il y a ${rowAge < 3600 ? Math.round(rowAge/60) + ' min' : 'plus dâ€™une heure'}).`,
+      overlay('🏁','Partage terminé',
+        `Le partage s'est interrompu (dernière position il y a ${rowAge < 3600 ? Math.round(rowAge/60) + ' min' : 'plus d’une heure'}).`,
         { promo:true });
       return;
     }
     if (t.lat == null || t.lng == null) {
-      overlay('â³','Trajet en prÃ©parationâ€¦','La premiÃ¨re position arrive dans quelques secondes.');
+      overlay('⏳','Trajet en préparation…','La première position arrive dans quelques secondes.');
       return;
     }
     $('stateOverlay').classList.add('hidden');
     $('driverTo').textContent = t.driver
-      ? `${t.driver} Â· en route vers` : 'En route vers';
+      ? `${t.driver} · en route vers` : 'En route vers';
     $('destName').textContent = t.dest || 'Suivi en direct';
-    $('eta').textContent = t.eta || 'â€”';
-    $('speed').textContent = (t.speed != null) ? `${t.speed} km/h` : 'â€”';
+    $('eta').textContent = t.eta || '—';
+    $('speed').textContent = (t.speed != null) ? `${t.speed} km/h` : '—';
     const age = Math.max(0, Math.round((Date.now() - new Date(t.updated_at).getTime())/1000));
-    $('updated').textContent = age < 8 ? "Ã  l'instant" : `il y a ${age < 60 ? age + ' s' : Math.round(age/60) + ' min'}`;
+    $('updated').textContent = age < 8 ? "à l'instant" : `il y a ${age < 60 ? age + ' s' : Math.round(age/60) + ' min'}`;
 
     const pos = [t.lat, t.lng];
     if (!marker) marker = L.marker(pos, { icon: carIcon }).addTo(map);
     else marker.setLatLng(pos);
 
-    // Drapeau d'arrivÃ©e + ligne pointillÃ©e + distance restante
+    // Drapeau d'arrivée + ligne pointillée + distance restante
     if (t.dest_lat != null && t.dest_lng != null) {
       const dpos = [t.dest_lat, t.dest_lng];
       if (!flag) flag = L.marker(dpos, { icon: flagIcon }).addTo(map);
@@ -207,7 +207,7 @@ async function tick() {
     const pts = trail.getLatLngs();
     if (pts.length === 0 || map.distance(pts[pts.length-1], pos) > 15) trail.addLatLng(pos);
   } catch (e) {
-    $('updated').textContent = 'reconnexionâ€¦';
+    $('updated').textContent = 'reconnexion…';
   }
 }
 tick();
