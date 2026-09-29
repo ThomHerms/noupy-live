@@ -45,7 +45,7 @@
   <div class="card dest">
     <div class="flag">🏁</div>
     <div>
-      <div class="to">En route vers</div>
+      <div class="to" id="driverTo">En route vers</div>
       <div class="name" id="destName">…</div>
     </div>
     <div class="maj" id="updated">connexion…</div>
@@ -121,6 +121,8 @@ async function tick() {
       return;
     }
     $('stateOverlay').classList.add('hidden');
+    $('driverTo').textContent = t.driver
+      ? `${t.driver} · en route vers` : 'En route vers';
     $('destName').textContent = t.dest || 'Suivi en direct';
     $('eta').textContent = t.eta || '—';
     $('speed').textContent = (t.speed != null) ? `${t.speed} km/h` : '—';
