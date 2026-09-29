@@ -6,43 +6,65 @@
 <title>Noupy — Suivi en direct</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-  :root { --navy:#1B4F9C; --ink:#1A1A2E; --bg:#F5F7FA; }
+  :root { --navy:#1B4F9C; --ink:#1A1A2E; --bg:#F5F7FA; --sub:#64748B; --border:#E2E8F0; }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; background:var(--bg); height:100dvh; display:flex; flex-direction:column; }
-  header { background:#fff; padding:12px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid #E2E8F0; z-index:1000; }
-  header .logo { font-weight:900; letter-spacing:3px; color:var(--navy); font-size:17px; }
-  header .sub { font-size:12px; color:#64748B; }
-  #map { flex:1; }
-  .panel { background:#fff; border-top:1px solid #E2E8F0; padding:12px 16px; display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
-  .stat b { display:block; font-size:16px; color:var(--ink); }
-  .stat span { font-size:11px; color:#94A3B8; }
-  .live { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:#DC2626; }
-  .dot { width:9px; height:9px; border-radius:50%; background:#DC2626; animation:pulse 1.2s infinite; }
-  @keyframes pulse { 50% { opacity:.3; } }
+  body { font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; background:var(--bg); min-height:100dvh; }
+  .wrap { max-width:520px; margin:0 auto; padding:14px 14px 22px; }
+  header { display:flex; align-items:center; gap:10px; padding:4px 4px 14px; }
+  header .logo { font-weight:900; letter-spacing:3px; color:var(--navy); font-size:18px; }
+  .live { margin-left:auto; display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:800; color:#DC2626; background:#fff; border:1px solid var(--border); padding:5px 10px; border-radius:20px; }
+  .dot { width:8px; height:8px; border-radius:50%; background:#DC2626; animation:pulse 1.2s infinite; }
+  @keyframes pulse { 50% { opacity:.25; } }
+  .card { background:#fff; border:1px solid var(--border); border-radius:18px; box-shadow:0 3px 14px rgba(0,0,0,.06); }
+  .dest { padding:14px 16px; display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .dest .flag { font-size:26px; }
+  .dest .to { font-size:11px; color:var(--sub); font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+  .dest .name { font-size:17px; font-weight:800; color:var(--ink); }
+  .dest .maj { margin-left:auto; text-align:right; font-size:11px; color:var(--sub); }
+  #map { height:46dvh; min-height:280px; border-radius:18px; margin-bottom:12px; border:1px solid var(--border); box-shadow:0 3px 14px rgba(0,0,0,.06); }
+  .stats { display:flex; gap:12px; }
+  .stat { flex:1; padding:13px 10px; text-align:center; }
+  .stat b { display:block; font-size:19px; color:var(--navy); font-weight:900; }
+  .stat span { font-size:11px; color:var(--sub); font-weight:600; }
+  footer { text-align:center; margin-top:16px; font-size:11px; color:#94A3B8; }
   .overlay { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; padding:24px; z-index:2000; }
-  .overlay .big { font-size:44px; }
-  .overlay h2 { color:var(--ink); font-size:19px; }
-  .overlay p { color:#64748B; font-size:14px; max-width:320px; }
+  .overlay .big { font-size:52px; }
+  .overlay h2 { color:var(--ink); font-size:20px; }
+  .overlay p { color:var(--sub); font-size:14px; max-width:320px; }
   .hidden { display:none !important; }
 </style>
 </head>
 <body>
-<header>
-  <div class="logo">NOUPY</div>
-  <div>
-    <div id="destLine" style="font-weight:700;color:var(--ink);font-size:14px;">Suivi en direct</div>
-    <div class="sub" id="updated">connexion…</div>
+<div class="wrap">
+  <header>
+    <img src="noupy.png" alt="Noupy" style="width:42px;height:42px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.18);">
+    <div class="logo">NOUPY</div>
+    <span class="live"><span class="dot"></span>DIRECT</span>
+  </header>
+
+  <div class="card dest">
+    <div class="flag">🏁</div>
+    <div>
+      <div class="to">En route vers</div>
+      <div class="name" id="destName">…</div>
+    </div>
+    <div class="maj" id="updated">connexion…</div>
   </div>
-  <div style="margin-left:auto"><span class="live" id="liveBadge"><span class="dot"></span>DIRECT</span></div>
-</header>
-<div id="map"></div>
-<div class="panel">
-  <div class="stat"><b id="eta">—</b><span>arrivée prévue</span></div>
-  <div class="stat"><b id="speed">—</b><span>vitesse</span></div>
+
+  <div id="map"></div>
+
+  <div class="card stats">
+    <div class="stat"><b id="eta">—</b><span>arrivée prévue</span></div>
+    <div class="stat"><b id="speed">—</b><span>vitesse</span></div>
+    <div class="stat"><b id="dist">—</b><span>à vol d'oiseau</span></div>
+  </div>
+
+  <footer>Suivi partagé avec Noupy · position rafraîchie toutes les 10 s</footer>
 </div>
 
 <div class="overlay" id="stateOverlay">
-  <div class="big" id="ovEmoji">🐶</div>
+  <img src="noupy.png" alt="Noupy" style="width:96px;height:96px;border-radius:24px;box-shadow:0 4px 16px rgba(0,0,0,.20);">
+  <div class="big" id="ovEmoji" style="font-size:34px;margin-top:-6px;"></div>
   <h2 id="ovTitle">Connexion au trajet…</h2>
   <p id="ovText">Un instant, Noupy cherche la position.</p>
 </div>
@@ -53,14 +75,17 @@ const SUPA = 'https://jbvdyxpfctlvcakmkgkx.supabase.co';
 const KEY  = 'sb_publishable_BZWCPb5iHGQeEY3wZyxf0w_2mLm3OWh';
 const code = new URLSearchParams(location.search).get('t');
 
-const map = L.map('map', { zoomControl: false }).setView([46.6, 2.4], 6);
+const map = L.map('map', { zoomControl:false }).setView([46.6, 2.4], 6);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-  { attribution: '© OpenStreetMap' }).addTo(map);
+  { attribution:'© OpenStreetMap' }).addTo(map);
 
-const icon = L.divIcon({ className:'', iconSize:[38,38], iconAnchor:[19,19],
-  html:'<div style="width:38px;height:38px;border-radius:50%;background:#1B4F9C;border:4px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:17px;">🚗</div>' });
-let marker = null;
-let trail = L.polyline([], { color:'#1B4F9C', weight:4, opacity:.7 }).addTo(map);
+const carIcon = L.divIcon({ className:'', iconSize:[36,36], iconAnchor:[18,18],
+  html:'<div style="width:36px;height:36px;border-radius:50%;background:#1B4F9C;border:4px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:16px;">🚗</div>' });
+const flagIcon = L.divIcon({ className:'', iconSize:[34,34], iconAnchor:[6,30],
+  html:'<div style="font-size:28px;text-shadow:0 1px 3px rgba(0,0,0,.35);">🏁</div>' });
+
+let marker = null, flag = null, destLine = null, fitted = false;
+const trail = L.polyline([], { color:'#1B4F9C', weight:4, opacity:.75 }).addTo(map);
 let follow = true;
 map.on('dragstart', () => follow = false);
 
@@ -70,6 +95,10 @@ function overlay(emoji, title, text) {
   $('ovTitle').textContent = title;
   $('ovText').textContent = text;
   $('stateOverlay').classList.remove('hidden');
+}
+function kmStr(m) {
+  return m < 1000 ? Math.round(m) + ' m'
+       : (m/1000).toFixed(m < 10000 ? 1 : 0).replace('.', ',') + ' km';
 }
 
 let misses = 0;
@@ -86,31 +115,43 @@ async function tick() {
     }
     misses = 0;
     const t = rows[0];
-    if (t.arrived) {
-      overlay('🎉','Bien arrivé !','Le trajet est terminé, tout va bien.');
-      return;
-    }
+    if (t.arrived) { overlay('🎉','Bien arrivé !','Le trajet est terminé, tout va bien.'); return; }
     if (t.lat == null || t.lng == null) {
       overlay('⏳','Trajet en préparation…','La première position arrive dans quelques secondes.');
       return;
     }
     $('stateOverlay').classList.add('hidden');
-    $('destLine').textContent = t.dest ? `En route vers ${t.dest}` : 'Suivi en direct';
+    $('destName').textContent = t.dest || 'Suivi en direct';
     $('eta').textContent = t.eta || '—';
     $('speed').textContent = (t.speed != null) ? `${t.speed} km/h` : '—';
     const age = Math.max(0, Math.round((Date.now() - new Date(t.updated_at).getTime())/1000));
-    $('updated').textContent = age < 5 ? "à l'instant" : `il y a ${age < 60 ? age + ' s' : Math.round(age/60) + ' min'}`;
+    $('updated').textContent = age < 8 ? "à l'instant" : `il y a ${age < 60 ? age + ' s' : Math.round(age/60) + ' min'}`;
+
     const pos = [t.lat, t.lng];
-    if (!marker) {
-      marker = L.marker(pos, { icon }).addTo(map);
+    if (!marker) marker = L.marker(pos, { icon: carIcon }).addTo(map);
+    else marker.setLatLng(pos);
+
+    // Drapeau d'arrivée + ligne pointillée + distance restante
+    if (t.dest_lat != null && t.dest_lng != null) {
+      const dpos = [t.dest_lat, t.dest_lng];
+      if (!flag) flag = L.marker(dpos, { icon: flagIcon }).addTo(map);
+      if (!destLine) {
+        destLine = L.polyline([pos, dpos],
+          { color:'#94A3B8', weight:2, dashArray:'6 8', opacity:.8 }).addTo(map);
+      } else destLine.setLatLngs([pos, dpos]);
+      $('dist').textContent = kmStr(map.distance(pos, dpos));
+      if (!fitted) {
+        map.fitBounds(L.latLngBounds([pos, dpos]).pad(0.18));
+        fitted = true; follow = false;
+      }
+    } else if (!fitted) {
       map.setView(pos, 14);
-    } else {
-      marker.setLatLng(pos);
-      if (follow) map.panTo(pos);
+      fitted = true;
     }
+    if (follow) map.panTo(pos);
+
     const pts = trail.getLatLngs();
-    if (pts.length === 0 ||
-        map.distance(pts[pts.length-1], pos) > 15) trail.addLatLng(pos);
+    if (pts.length === 0 || map.distance(pts[pts.length-1], pos) > 15) trail.addLatLng(pos);
   } catch (e) {
     $('updated').textContent = 'reconnexion…';
   }
