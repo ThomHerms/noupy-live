@@ -27,10 +27,13 @@
   .stat b { display:block; font-size:19px; color:var(--navy); font-weight:900; }
   .stat span { font-size:11px; color:var(--sub); font-weight:600; }
   footer { text-align:center; margin-top:16px; font-size:11px; color:#94A3B8; }
-  .overlay { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; padding:24px; z-index:2000; }
-  .overlay .big { font-size:52px; }
+  .overlay { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; text-align:center; padding:24px; z-index:2000; }
+  .ovcard { background:#fff; border:1px solid var(--border); border-radius:24px; box-shadow:0 8px 30px rgba(0,0,0,.08); padding:30px 26px 26px; max-width:340px; width:100%; display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .overlay .big { font-size:40px; line-height:1; }
   .overlay h2 { color:var(--ink); font-size:20px; }
-  .overlay p { color:var(--sub); font-size:14px; max-width:320px; }
+  .overlay p { color:var(--sub); font-size:14px; line-height:1.45; }
+  .ovsign { font-size:11px; color:#94A3B8; font-weight:700; letter-spacing:1.5px; }
+  .ovsign span { font-weight:500; letter-spacing:.3px; text-transform:none; }
   .hidden { display:none !important; }
 </style>
 </head>
@@ -66,10 +69,13 @@
 </div>
 
 <div class="overlay" id="stateOverlay">
-  <img src="noupy.png" alt="Noupy" style="width:110px;height:110px;object-fit:contain;">
-  <div class="big" id="ovEmoji" style="font-size:34px;margin-top:-6px;"></div>
-  <h2 id="ovTitle">Connexion au trajet…</h2>
-  <p id="ovText">Un instant, Noupy cherche la position.</p>
+  <div class="ovcard">
+    <img src="noupy.png" alt="Noupy" style="width:110px;height:110px;object-fit:contain;">
+    <div class="big" id="ovEmoji"></div>
+    <h2 id="ovTitle">Connexion au trajet…</h2>
+    <p id="ovText">Un instant, Noupy cherche la position.</p>
+  </div>
+  <div class="ovsign">NOUPY <span>· Votre copilote intelligent</span></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -113,12 +119,19 @@ async function tick() {
     const rows = await r.json();
     if (!Array.isArray(rows) || rows.length === 0) {
       misses++;
-      if (misses >= 2) overlay('🏁','Partage terminé',"Ce trajet n'est plus partagé (arrivé ou arrêté).");
+      if (misses >= 2) overlay('🏁','Partage terminé',
+        "Ce lien de suivi n'est plus actif : le trajet est terminé ou le partage a été arrêté.");
       return;
     }
     misses = 0;
     const t = rows[0];
-    if (t.arrived) { overlay('🎉','Bien arrivé !','Le trajet est terminé, tout va bien.'); return; }
+    if (t.arrived) {
+      const qui = t.driver || 'Votre proche';
+      overlay('🎉','Bien arrivé !',
+        t.dest ? `${qui} est bien arrivé à ${t.dest}. Tout va bien !`
+               : `${qui} est bien arrivé à destination. Tout va bien !`);
+      return;
+    }
     if (t.lat == null || t.lng == null) {
       overlay('⏳','Trajet en préparation…','La première position arrive dans quelques secondes.');
       return;
