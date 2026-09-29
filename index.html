@@ -28,10 +28,14 @@
   .stat span { font-size:11px; color:var(--sub); font-weight:600; }
   footer { text-align:center; margin-top:16px; font-size:11px; color:#94A3B8; }
   .overlay { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; text-align:center; padding:24px; z-index:2000; }
-  .ovcard { background:#fff; border:1px solid var(--border); border-radius:24px; box-shadow:0 8px 30px rgba(0,0,0,.08); padding:30px 26px 26px; max-width:340px; width:100%; display:flex; flex-direction:column; align-items:center; gap:10px; }
-  .overlay .big { font-size:40px; line-height:1; }
-  .overlay h2 { color:var(--ink); font-size:20px; }
-  .overlay p { color:var(--sub); font-size:14px; line-height:1.45; }
+  .ovcard { background:#fff; border:1px solid var(--border); border-radius:24px; box-shadow:0 8px 30px rgba(0,0,0,.08); padding:30px 26px 24px; max-width:360px; width:100%; display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .overlay .big { font-size:42px; line-height:1; }
+  .overlay h2 { color:var(--ink); font-size:22px; }
+  .overlay p { color:var(--sub); font-size:14.5px; line-height:1.5; }
+  .ovextra { margin-top:6px; padding:10px 18px; background:var(--bg); border-radius:12px; font-size:13px; font-weight:700; color:var(--navy); }
+  .ovpromo { background:#fff; border:1px solid var(--border); border-radius:18px; box-shadow:0 4px 16px rgba(0,0,0,.05); padding:16px 20px; max-width:360px; width:100%; }
+  .ovpromo b { display:block; color:var(--ink); font-size:14px; margin-bottom:3px; }
+  .ovpromo span { color:var(--sub); font-size:12.5px; line-height:1.45; }
   .ovsign { font-size:11px; color:#94A3B8; font-weight:700; letter-spacing:1.5px; }
   .ovsign span { font-weight:500; letter-spacing:.3px; text-transform:none; }
   .hidden { display:none !important; }
@@ -70,10 +74,17 @@
 
 <div class="overlay" id="stateOverlay">
   <div class="ovcard">
-    <img src="noupy.png" alt="Noupy" style="width:110px;height:110px;object-fit:contain;">
+    <img src="noupy.png" alt="Noupy" style="width:120px;height:120px;object-fit:contain;">
     <div class="big" id="ovEmoji"></div>
     <h2 id="ovTitle">Connexion au trajet…</h2>
     <p id="ovText">Un instant, Noupy cherche la position.</p>
+    <div class="ovextra hidden" id="ovExtra"></div>
+  </div>
+  <div class="ovpromo hidden" id="ovPromo">
+    <b>🚗 Envie du même copilote ?</b>
+    <span>Noupy est un GPS français gratuit : trafic en temps réel, radars,
+    prix du carburant, trajets camping-car et partage en direct.
+    Bientôt disponible.</span>
   </div>
   <div class="ovsign">NOUPY <span>· Votre copilote intelligent</span></div>
 </div>
@@ -99,10 +110,14 @@ let follow = true;
 map.on('dragstart', () => follow = false);
 
 const $ = id => document.getElementById(id);
-function overlay(emoji, title, text) {
+function overlay(emoji, title, text, opts) {
+  opts = opts || {};
   $('ovEmoji').textContent = emoji;
   $('ovTitle').textContent = title;
   $('ovText').textContent = text;
+  $('ovExtra').classList.toggle('hidden', !opts.extra);
+  if (opts.extra) $('ovExtra').textContent = opts.extra;
+  $('ovPromo').classList.toggle('hidden', !opts.promo);
   $('stateOverlay').classList.remove('hidden');
 }
 function kmStr(m) {
@@ -120,16 +135,20 @@ async function tick() {
     if (!Array.isArray(rows) || rows.length === 0) {
       misses++;
       if (misses >= 2) overlay('🏁','Partage terminé',
-        "Ce lien de suivi n'est plus actif : le trajet est terminé ou le partage a été arrêté.");
+        "Ce lien de suivi n'est plus actif : le trajet est terminé ou le partage a été arrêté.",
+        { promo:true });
       return;
     }
     misses = 0;
     const t = rows[0];
     if (t.arrived) {
       const qui = t.driver || 'Votre proche';
+      const d = new Date(t.updated_at);
+      const heure = `${d.getHours()}h${String(d.getMinutes()).padStart(2,'0')}`;
       overlay('🎉','Bien arrivé !',
         t.dest ? `${qui} est bien arrivé à ${t.dest}. Tout va bien !`
-               : `${qui} est bien arrivé à destination. Tout va bien !`);
+               : `${qui} est bien arrivé à destination. Tout va bien !`,
+        { promo:true, extra:`🏁 Arrivée vers ${heure}` });
       return;
     }
     if (t.lat == null || t.lng == null) {
