@@ -18,7 +18,7 @@
   .card { background:#fff; border:1px solid var(--border); border-radius:18px; box-shadow:0 3px 14px rgba(0,0,0,.06); }
   .dest { padding:14px 16px; display:flex; align-items:center; gap:12px; margin-bottom:12px; }
   .dest .flag { font-size:26px; }
-  .dest .to { font-size:11px; color:var(--sub); font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+  .dest .to { font-size:11px; color:var(--navy); font-weight:800; text-transform:uppercase; letter-spacing:.5px; }
   .dest .name { font-size:17px; font-weight:800; color:var(--ink); }
   .dest .maj { margin-left:auto; text-align:right; font-size:11px; color:var(--sub); }
   #map { height:46dvh; min-height:280px; border-radius:18px; margin-bottom:12px; border:1px solid var(--border); box-shadow:0 3px 14px rgba(0,0,0,.06); }
@@ -30,14 +30,15 @@
   .overlay { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; text-align:center; padding:24px; z-index:2000; }
   .ovcard { background:#fff; border:1px solid var(--border); border-radius:24px; box-shadow:0 8px 30px rgba(0,0,0,.08); padding:30px 26px 24px; max-width:360px; width:100%; display:flex; flex-direction:column; align-items:center; gap:10px; }
   .overlay .big { font-size:42px; line-height:1; }
-  .overlay h2 { color:var(--ink); font-size:22px; }
+  .overlay h2 { color:var(--navy); font-size:22px; }
   .overlay p { color:var(--sub); font-size:14.5px; line-height:1.5; }
   .ovextra { margin-top:6px; padding:10px 18px; background:var(--bg); border-radius:12px; font-size:13px; font-weight:700; color:var(--navy); }
-  .ovpromo { background:#fff; border:1px solid var(--border); border-radius:18px; box-shadow:0 4px 16px rgba(0,0,0,.05); padding:16px 20px; max-width:360px; width:100%; }
-  .ovpromo b { display:block; color:var(--ink); font-size:14px; margin-bottom:3px; }
-  .ovpromo span { color:var(--sub); font-size:12.5px; line-height:1.45; }
-  .ovsign { font-size:11px; color:#94A3B8; font-weight:700; letter-spacing:1.5px; }
-  .ovsign span { font-weight:500; letter-spacing:.3px; text-transform:none; }
+  .ovpromo { background:var(--navy); border-radius:18px; box-shadow:0 6px 18px rgba(27,79,156,.30); padding:16px 20px; max-width:360px; width:100%; }
+  .ovpromo b { display:block; color:#fff; font-size:14px; margin-bottom:3px; }
+  .ovpromo span { color:#DBEAFE; font-size:12.5px; line-height:1.5; }
+  .ovsign { font-size:11px; color:var(--navy); font-weight:900; letter-spacing:1.5px; }
+  .ovsign span { font-weight:500; letter-spacing:.3px; color:#64748B; }
+  .ovcard { border-top:4px solid var(--navy); }
   .hidden { display:none !important; }
 </style>
 </head>
@@ -149,6 +150,15 @@ async function tick() {
         t.dest ? `${qui} est bien arrivé à ${t.dest}. Tout va bien !`
                : `${qui} est bien arrivé à destination. Tout va bien !`,
         { promo:true, extra:`🏁 Arrivée vers ${heure}` });
+      return;
+    }
+    // Partage muet depuis plus de 3 min (app fermée sans arrêter le
+    // partage) : on affiche la fin plutôt qu'une carte figée
+    const rowAge = Math.round((Date.now() - new Date(t.updated_at).getTime())/1000);
+    if (rowAge > 180) {
+      overlay('🏁','Partage terminé',
+        `Le partage s'est interrompu (dernière position il y a ${rowAge < 3600 ? Math.round(rowAge/60) + ' min' : 'plus d’une heure'}).`,
+        { promo:true });
       return;
     }
     if (t.lat == null || t.lng == null) {
