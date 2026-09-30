@@ -21,7 +21,10 @@
   .dest .to { font-size:11px; color:var(--navy); font-weight:800; text-transform:uppercase; letter-spacing:.5px; }
   .dest .name { font-size:17px; font-weight:800; color:var(--ink); }
   .dest .maj { margin-left:auto; text-align:right; font-size:11px; color:var(--sub); }
-  #map { height:46dvh; min-height:280px; border-radius:18px; margin-bottom:12px; border:1px solid var(--border); box-shadow:0 3px 14px rgba(0,0,0,.06); }
+  .mapwrap { position:relative; margin-bottom:12px; }
+  #map { height:46dvh; min-height:280px; border-radius:18px; border:1px solid var(--border); box-shadow:0 3px 14px rgba(0,0,0,.06); }
+  .recenterBtn { position:absolute; right:12px; bottom:12px; z-index:600; width:44px; height:44px; border-radius:50%; background:#fff; border:1px solid var(--border); box-shadow:0 3px 10px rgba(0,0,0,.20); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
+  .recenterBtn:active { background:#EFF6FF; }
   .stats { display:flex; gap:12px; }
   .stat { flex:1; padding:13px 10px; text-align:center; }
   .stat b { display:block; font-size:19px; color:var(--navy); font-weight:900; }
@@ -62,7 +65,12 @@
     <div class="maj" id="updated">connexion…</div>
   </div>
 
-  <div id="map"></div>
+  <div class="mapwrap">
+    <div id="map"></div>
+    <button id="recenter" class="recenterBtn hidden" title="Recentrer">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="#1B4F9C"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8.94 3A8.99 8.99 0 0 0 13 3.06V1h-2v2.06A8.99 8.99 0 0 0 3.06 11H1v2h2.06A8.99 8.99 0 0 0 11 20.94V23h2v-2.06A8.99 8.99 0 0 0 20.94 13H23v-2h-2.06zM12 19a7 7 0 1 1 0-14 7 7 0 0 1 0 14z"/></svg>
+    </button>
+  </div>
 
   <div class="card stats">
     <div class="stat"><b id="eta">—</b><span>arrivée prévue</span></div>
@@ -115,9 +123,23 @@ const flagIcon = L.divIcon({ className:'', iconSize:[34,34], iconAnchor:[6,30],
 let marker = null, flag = null, destLine = null, fitted = false;
 const trail = L.polyline([], { color:'#1B4F9C', weight:4, opacity:.75 }).addTo(map);
 let follow = true;
-map.on('dragstart', () => follow = false);
+let progMove = false; // mouvements déclenchés par le code (pas l'utilisateur)
 
 const $ = id => document.getElementById(id);
+
+// Bouton recentrer : apparaît dès que l'utilisateur déplace ou zoome la
+// carte, recentre sur le véhicule et reprend le suivi
+function unfollow() { follow = false; $('recenter').classList.remove('hidden'); }
+map.on('dragstart', unfollow);
+map.on('zoomend', () => { if (!progMove && marker) unfollow(); progMove = false; });
+$('recenter').onclick = () => {
+  follow = true;
+  $('recenter').classList.add('hidden');
+  if (marker) {
+    progMove = true;
+    map.setView(marker.getLatLng(), Math.max(map.getZoom(), 13));
+  }
+};
 function overlay(emoji, title, text, opts) {
   opts = opts || {};
   $('ovEmoji').textContent = emoji;
@@ -195,10 +217,13 @@ async function tick() {
       } else destLine.setLatLngs([pos, dpos]);
       $('dist').textContent = kmStr(map.distance(pos, dpos));
       if (!fitted) {
+        progMove = true;
         map.fitBounds(L.latLngBounds([pos, dpos]).pad(0.18));
-        fitted = true; follow = false;
+        fitted = true;
+        unfollow(); // vue d'ensemble initiale : bouton recentrer visible
       }
     } else if (!fitted) {
+      progMove = true;
       map.setView(pos, 14);
       fitted = true;
     }
