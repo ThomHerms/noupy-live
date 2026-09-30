@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Noupy — Politique de confidentialité</title>
+<link rel="icon" href="noupy.png">
+<style>
+  :root {
+    --navy: #1B4F9C;
+    --bg: #F5F7FA;
+    --text: #1A1A2E;
+    --muted: #6b7280;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.65;
+  }
+  header {
+    background: var(--navy); color: #fff;
+    padding: 22px 16px; text-align: center;
+  }
+  header img { height: 56px; }
+  header h1 { font-size: 20px; margin: 8px 0 2px; }
+  header .slogan { font-size: 13px; opacity: .85; }
+  main { max-width: 760px; margin: 0 auto; padding: 16px; }
+  .card {
+    background: #fff; border-radius: 14px; padding: 20px 22px;
+    box-shadow: 0 1px 4px rgba(26,26,46,.08); margin-bottom: 16px;
+  }
+  h2 { font-size: 16px; color: var(--navy); margin: 0 0 10px; }
+  p, li { font-size: 14px; margin: 0 0 10px; }
+  ul { padding-left: 20px; margin: 0 0 10px; }
+  li { margin-bottom: 6px; }
+  .updated { text-align: center; color: var(--muted); font-size: 12px; margin: 14px 0 22px; }
+  strong { color: var(--text); }
+  a { color: var(--navy); }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 10px 16px 26px; }
+</style>
+</head>
+<body>
+<header>
+  <img src="noupy.png" alt="Noupy">
+  <h1>Politique de confidentialité</h1>
+  <div class="slogan">Noupy — Votre copilote intelligent</div>
+</header>
+
+<main>
+  <p class="updated">Dernière mise à jour : 30 septembre 2026</p>
+
+  <div class="card">
+    <h2>En deux mots</h2>
+    <p>Noupy est une application GPS. Elle n'a <strong>pas de compte
+    utilisateur</strong>, <strong>pas de publicité</strong>, et vos données ne
+    sont <strong>jamais vendues</strong>. Vos favoris, votre historique de
+    trajets et vos véhicules restent <strong>sur votre téléphone</strong>.
+    Votre position n'est transmise qu'aux services strictement nécessaires au
+    guidage, et les rares données partagées (signalements, partage de trajet)
+    sont anonymes ou volontaires, et s'effacent automatiquement.</p>
+  </div>
+
+  <div class="card">
+    <h2>Ce qui reste sur votre téléphone</h2>
+    <p>Les données suivantes sont stockées uniquement sur votre appareil et ne
+    sont jamais envoyées sur un serveur de Noupy :</p>
+    <ul>
+      <li>vos lieux enregistrés, raccourcis Maison/Travail et historique de recherche ;</li>
+      <li>votre historique de trajets et vos statistiques (kilomètres, carburant…) ;</li>
+      <li>vos véhicules et leur gabarit ;</li>
+      <li>vos préférences (voix, alertes, raccourcis de la carte…) ;</li>
+      <li>les cartes téléchargées pour le hors-ligne.</li>
+    </ul>
+    <p>Vous pouvez les exporter (Profil → Sauvegarde) et les supprimer à tout
+    moment en effaçant les données de l'application.</p>
+  </div>
+
+  <div class="card">
+    <h2>Votre position GPS</h2>
+    <p>La position sert au guidage et est traitée en direct : Noupy ne la
+    conserve sur aucun serveur. Pour fournir ses services, l'application
+    l'envoie ponctuellement à des services spécialisés :</p>
+    <ul>
+      <li><strong>calcul d'itinéraire</strong> : GraphHopper, openrouteservice ;</li>
+      <li><strong>trafic, limites de vitesse et lieux à proximité</strong> : HERE Technologies, Foursquare ;</li>
+      <li><strong>recherche d'adresses</strong> : Photon (Komoot) et Nominatim (OpenStreetMap) ;</li>
+      <li><strong>cartes et données routières</strong> (ponts, ralentisseurs, radars) : OpenStreetMap / Overpass ;</li>
+      <li><strong>météo</strong> : Open-Meteo ;</li>
+      <li><strong>prix des carburants</strong> : data.economie.gouv.fr (données publiques françaises).</li>
+    </ul>
+    <p>Ces services reçoivent des coordonnées sans votre identité (pas de nom,
+    pas d'identifiant publicitaire) et sont soumis à leurs propres politiques
+    de confidentialité.</p>
+  </div>
+
+  <div class="card">
+    <h2>Assistant vocal « Parler à Noupy »</h2>
+    <p>Si vous utilisez l'assistant, vos messages — et, pour des réponses
+    utiles, votre commune approximative et votre trajet en cours — sont
+    transmis à <strong>Anthropic</strong> (l'intelligence artificielle Claude)
+    le temps de la conversation. La dictée vocale utilise la reconnaissance
+    vocale de votre téléphone (Google sur Android). N'utilisez pas l'assistant
+    si vous ne le souhaitez pas : le guidage fonctionne entièrement sans lui.</p>
+  </div>
+
+  <div class="card">
+    <h2>Signalements communautaires</h2>
+    <p>Quand vous signalez un événement (bouchon, danger, contrôle…), sont
+    partagés avec les autres conducteurs : la <strong>position du
+    signalement</strong>, son <strong>type</strong> et l'heure. Un
+    <strong>identifiant anonyme</strong> propre à votre appareil (un nombre
+    aléatoire, sans lien avec votre identité) y est associé pour lutter contre
+    les abus. Les signalements expirent automatiquement au bout de
+    <strong>2 heures</strong> et sont définitivement purgés ensuite.</p>
+  </div>
+
+  <div class="card">
+    <h2>Partage de trajet en direct</h2>
+    <p>Cette fonction n'existe que si <strong>vous l'activez</strong>. Votre
+    position, votre vitesse, votre destination, votre heure d'arrivée estimée
+    et le pseudo que vous avez choisi sont alors visibles par
+    <strong>toute personne disposant du lien</strong> que vous partagez, sur
+    suivi.noupy.fr. Le partage s'arrête quand vous l'arrêtez ou à la fin du
+    trajet, et les données sont <strong>supprimées automatiquement dans les
+    heures qui suivent</strong>.</p>
+  </div>
+
+  <div class="card">
+    <h2>Mesure d'utilisation anonyme</h2>
+    <p>Une fois par jour, l'application signale « un appareil a ouvert Noupy
+    aujourd'hui » avec le même identifiant anonyme aléatoire. Aucune position,
+    aucun nom, aucune donnée personnelle : cela nous permet uniquement de
+    savoir combien d'appareils utilisent l'application. Noupy n'embarque
+    <strong>aucun outil publicitaire ni traceur tiers</strong>.</p>
+  </div>
+
+  <div class="card">
+    <h2>Autorisations Android</h2>
+    <ul>
+      <li><strong>Localisation</strong> (y compris en arrière-plan pendant la
+      navigation) : indispensable au guidage ;</li>
+      <li><strong>Microphone</strong> : uniquement pour la recherche vocale et
+      l'assistant, à votre demande ;</li>
+      <li><strong>Notifications</strong> : rappels de départ des trajets
+      planifiés et guidage.</li>
+    </ul>
+    <p>Chaque autorisation peut être refusée ou retirée dans les réglages
+    Android ; seules les fonctions correspondantes seront indisponibles.</p>
+  </div>
+
+  <div class="card">
+    <h2>Vos droits</h2>
+    <p>Conformément au RGPD, vous disposez d'un droit d'accès, de rectification
+    et d'effacement. Concrètement :</p>
+    <ul>
+      <li>les données locales s'effacent en supprimant les données de
+      l'application (réglages Android) ;</li>
+      <li>les signalements et partages de trajet s'effacent automatiquement
+      comme décrit ci-dessus ;</li>
+      <li>l'identifiant anonyme est régénéré si vous effacez les données de
+      l'application — l'ancien devient orphelin.</li>
+    </ul>
+    <p>Pour toute question ou demande : <a href="mailto:contact@noupy.fr">contact@noupy.fr</a>.
+    Vous pouvez également saisir la CNIL (<a href="https://www.cnil.fr">cnil.fr</a>).</p>
+  </div>
+
+  <div class="card">
+    <h2>Modifications</h2>
+    <p>Cette politique peut évoluer avec l'application. La version en vigueur
+    est toujours publiée à cette adresse, avec sa date de mise à jour.</p>
+  </div>
+</main>
+
+<footer>Noupy — Votre copilote intelligent · <a href="https://suivi.noupy.fr/">suivi.noupy.fr</a></footer>
+</body>
+</html>
