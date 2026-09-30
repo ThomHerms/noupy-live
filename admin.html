@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Noupy Admin</title>
+<link rel="icon" href="noupy.png">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root {
+    --navy: #1B4F9C;
+    --bg: #F5F7FA;
+    --text: #1A1A2E;
+    --muted: #6b7280;
+    --danger: #C0392B;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  header {
+    background: var(--navy); color: #fff;
+    padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+  }
+  header img { height: 36px; }
+  header h1 { font-size: 18px; margin: 0; font-weight: 700; }
+  header .sub { font-size: 12px; opacity: .85; }
+  header button {
+    margin-left: auto; background: rgba(255,255,255,.15); color: #fff;
+    border: 1px solid rgba(255,255,255,.4); border-radius: 8px;
+    padding: 6px 12px; font-size: 13px; cursor: pointer;
+  }
+  main { max-width: 980px; margin: 0 auto; padding: 16px; }
+  .card {
+    background: #fff; border-radius: 14px; padding: 16px;
+    box-shadow: 0 1px 4px rgba(26,26,46,.08); margin-bottom: 16px;
+  }
+  .card h2 { font-size: 15px; margin: 0 0 12px; color: var(--navy); }
+  /* Écran clé */
+  #loginCard input {
+    width: 100%; padding: 10px 12px; border: 1px solid #d1d5db;
+    border-radius: 8px; font-size: 14px; font-family: monospace;
+  }
+  #loginCard button, .btn {
+    background: var(--navy); color: #fff; border: none; border-radius: 8px;
+    padding: 10px 16px; font-size: 14px; cursor: pointer; margin-top: 10px;
+  }
+  #loginCard p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .stat {
+    background: #fff; border-radius: 14px; padding: 14px;
+    box-shadow: 0 1px 4px rgba(26,26,46,.08); text-align: center;
+  }
+  .stat .num { font-size: 26px; font-weight: 800; color: var(--navy); }
+  .stat .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  /* Carte */
+  #map { height: 46dvh; min-height: 300px; border-radius: 14px; }
+  /* Tableaux */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--muted); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid #e5e7eb; }
+  td { padding: 8px; border-bottom: 1px solid #f0f2f5; vertical-align: middle; }
+  tr.expired td { color: #9ca3af; }
+  .dev { font-family: monospace; font-size: 12px; color: var(--muted); }
+  .act {
+    border: 1px solid #d1d5db; background: #fff; border-radius: 7px;
+    padding: 4px 10px; font-size: 12px; cursor: pointer; margin-right: 4px;
+  }
+  .act.red { color: var(--danger); border-color: var(--danger); }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #e8f0fb; color: var(--navy); }
+  .badge.gray { background: #eef0f3; color: #9ca3af; }
+  .empty { color: var(--muted); font-size: 13px; padding: 10px 0; }
+  #msg { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    background: var(--text); color: #fff; padding: 10px 18px; border-radius: 10px;
+    font-size: 13px; display: none; z-index: 9999; }
+  .usage-scroll { max-height: 260px; overflow-y: auto; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #F5F7FA; } /* page volontairement claire */
+  }
+</style>
+</head>
+<body>
+<header>
+  <img src="noupy.png" alt="Noupy">
+  <div>
+    <h1>Noupy Admin</h1>
+    <div class="sub">Communauté &amp; utilisation</div>
+  </div>
+  <button id="logoutBtn" style="display:none" onclick="logout()">Déconnexion</button>
+</header>
+
+<main>
+  <!-- Écran de connexion -->
+  <div class="card" id="loginCard">
+    <h2>Clé d'administration</h2>
+    <p>Colle ta clé <strong>secrète</strong> Supabase (Dashboard → Project Settings →
+    API keys → <em>service_role</em> ou <em>Secret key</em>). Elle reste dans TON
+    navigateur (localStorage), elle n'est jamais publiée ni envoyée ailleurs
+    qu'à Supabase.</p>
+    <input id="keyInput" type="password" placeholder="sb_secret_… ou eyJ…" autocomplete="off">
+    <button onclick="saveKey()">Entrer</button>
+  </div>
+
+  <!-- Tableau de bord -->
+  <div id="dash" style="display:none">
+    <div class="stats" style="margin-bottom:16px">
+      <div class="stat"><div class="num" id="stToday">–</div><div class="lbl">appareils aujourd'hui</div></div>
+      <div class="stat"><div class="num" id="stWeek">–</div><div class="lbl">appareils sur 7 jours</div></div>
+      <div class="stat"><div class="num" id="stAlive">–</div><div class="lbl">signalements actifs</div></div>
+      <div class="stat"><div class="num" id="stBanned">–</div><div class="lbl">appareils bannis</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Carte des signalements actifs</h2>
+      <div id="map"></div>
+    </div>
+
+    <div class="card">
+      <h2>Signalements (dernières 24 h)</h2>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Signalement</th><th>État</th><th>👍</th><th>👎</th><th>Quand</th><th>Appareil</th><th></th></tr></thead>
+          <tbody id="repRows"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="repEmpty" style="display:none">Aucun signalement.</div>
+    </div>
+
+    <div class="card">
+      <h2>Appareils bannis</h2>
+      <table><tbody id="banRows"></tbody></table>
+      <div class="empty" id="banEmpty" style="display:none">Aucun appareil banni.</div>
+    </div>
+
+    <div class="card">
+      <h2>Utilisation jour par jour</h2>
+      <div class="usage-scroll">
+        <table>
+          <thead><tr><th>Jour</th><th>Appareils</th></tr></thead>
+          <tbody id="useRows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <button class="btn" onclick="loadAll()">🔄 Actualiser</button>
+  </div>
+</main>
+
+<div id="msg"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const URL_SB = 'https://jbvdyxpfctlvcakmkgkx.supabase.co/rest/v1';
+const KEY_STORE = 'noupy_admin_key';
+let map = null, markersLayer = null;
+
+function getKey() { try { return localStorage.getItem(KEY_STORE) || ''; } catch (_) { return ''; } }
+function headers() {
+  const k = getKey();
+  const h = { 'apikey': k, 'Content-Type': 'application/json' };
+  // Clé legacy JWT (eyJ…) : en-tête Bearer requis en plus
+  if (k.startsWith('eyJ')) h['Authorization'] = 'Bearer ' + k;
+  return h;
+}
+function toast(t) {
+  const m = document.getElementById('msg');
+  m.textContent = t; m.style.display = 'block';
+  clearTimeout(m._t); m._t = setTimeout(() => m.style.display = 'none', 3500);
+}
+function saveKey() {
+  const v = document.getElementById('keyInput').value.trim();
+  if (!v) { toast('Colle ta clé d\'abord'); return; }
+  try { localStorage.setItem(KEY_STORE, v); } catch (_) {}
+  boot();
+}
+function logout() {
+  if (!confirm('Oublier la clé sur ce navigateur ?')) return;
+  try { localStorage.removeItem(KEY_STORE); } catch (_) {}
+  location.reload();
+}
+
+async function sb(path, opts) {
+  const r = await fetch(URL_SB + path, Object.assign({ headers: headers() }, opts || {}));
+  if (!r.ok) throw new Error(await r.text().catch(() => r.status));
+  const txt = await r.text();
+  return txt ? JSON.parse(txt) : null;
+}
+
+function fmtWhen(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return '?';
+  const mins = Math.round((Date.now() - d.getTime()) / 60000);
+  if (mins < 1) return 'à l\'instant';
+  if (mins < 60) return 'il y a ' + mins + ' min';
+  const h = Math.floor(mins / 60);
+  return 'il y a ' + h + ' h' + String(mins % 60).padStart(2, '0');
+}
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g,
+    c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function loadAll() {
+  try {
+    const since24h = new Date(Date.now() - 24 * 3600e3).toISOString();
+    const [reports, banned, usage] = await Promise.all([
+      sb('/reports?created_at=gte.' + since24h + '&order=created_at.desc&limit=300'),
+      sb('/banned_devices?order=banned_at.desc&limit=200'),
+      sb('/app_usage?select=device_id,day&order=day.desc&limit=5000'),
+    ]);
+    renderReports(reports || []);
+    renderBanned(banned || []);
+    renderUsage(usage || []);
+    toast('Actualisé ✔');
+  } catch (e) {
+    toast('Erreur : clé invalide ou réseau (' + String(e.message).slice(0, 80) + ')');
+  }
+}
+
+function isAlive(r) {
+  const ref = r.last_confirmed_at || r.created_at;
+  const alive = (Date.now() - new Date(ref).getTime()) < 2 * 3600e3;
+  const hidden = (r.dismisses || 0) >= 2 && (r.dismisses || 0) > (r.confirms || 0);
+  return alive && !hidden;
+}
+
+function renderReports(list) {
+  const tbody = document.getElementById('repRows');
+  tbody.innerHTML = '';
+  const aliveList = list.filter(isAlive);
+  document.getElementById('stAlive').textContent = aliveList.length;
+  document.getElementById('repEmpty').style.display = list.length ? 'none' : 'block';
+
+  for (const r of list) {
+    const tr = document.createElement('tr');
+    const alive = isAlive(r);
+    if (!alive) tr.className = 'expired';
+    const dev = r.device || '';
+    tr.innerHTML =
+      '<td>' + esc(r.emoji) + ' ' + esc(r.label || r.type) + '</td>' +
+      '<td>' + (alive ? '<span class="badge">actif</span>' : '<span class="badge gray">expiré</span>') + '</td>' +
+      '<td>' + (r.confirms || 0) + '</td>' +
+      '<td>' + (r.dismisses || 0) + '</td>' +
+      '<td>' + fmtWhen(r.created_at) + '</td>' +
+      '<td class="dev">' + esc(dev.slice(0, 8) || '—') + '</td>' +
+      '<td>' +
+        '<button class="act red" onclick="delReport(\'' + esc(r.id) + '\')">Supprimer</button>' +
+        (dev ? '<button class="act red" onclick="banDevice(\'' + esc(dev) + '\')">Bannir</button>' : '') +
+      '</td>';
+    tbody.appendChild(tr);
+  }
+
+  // Carte : uniquement les actifs
+  if (!map) {
+    map = L.map('map').setView([46.6, 2.4], 6); // France entière
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      { attribution: '© OpenStreetMap' }).addTo(map);
+    markersLayer = L.layerGroup().addTo(map);
+  }
+  markersLayer.clearLayers();
+  const pts = [];
+  for (const r of aliveList) {
+    if (typeof r.lat !== 'number' || typeof r.lng !== 'number') continue;
+    const icon = L.divIcon({
+      className: '', iconSize: [30, 30], iconAnchor: [15, 15],
+      html: '<div style="font-size:22px;text-shadow:0 1px 3px rgba(0,0,0,.35)">' + esc(r.emoji) + '</div>',
+    });
+    L.marker([r.lat, r.lng], { icon })
+      .bindPopup(esc(r.emoji) + ' ' + esc(r.label || r.type) + '<br>' + fmtWhen(r.created_at))
+      .addTo(markersLayer);
+    pts.push([r.lat, r.lng]);
+  }
+  if (pts.length) map.fitBounds(pts, { padding: [40, 40], maxZoom: 13 });
+}
+
+function renderBanned(list) {
+  document.getElementById('stBanned').textContent = list.length;
+  const tbody = document.getElementById('banRows');
+  tbody.innerHTML = '';
+  document.getElementById('banEmpty').style.display = list.length ? 'none' : 'block';
+  for (const b of list) {
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td class="dev">' + esc(b.device) + '</td>' +
+      '<td>' + fmtWhen(b.banned_at) + '</td>' +
+      '<td><button class="act" onclick="unban(\'' + esc(b.device) + '\')">Débloquer</button></td>';
+    tbody.appendChild(tr);
+  }
+}
+
+function renderUsage(rows) {
+  // Agrégation par jour + stats du haut
+  const byDay = new Map();
+  const today = new Date().toISOString().slice(0, 10);
+  const weekAgo = new Date(Date.now() - 7 * 24 * 3600e3).toISOString().slice(0, 10);
+  const weekDevices = new Set();
+  for (const u of rows) {
+    byDay.set(u.day, (byDay.get(u.day) || 0) + 1);
+    if (u.day > weekAgo) weekDevices.add(u.device_id);
+  }
+  document.getElementById('stToday').textContent = byDay.get(today) || 0;
+  document.getElementById('stWeek').textContent = weekDevices.size;
+  const tbody = document.getElementById('useRows');
+  tbody.innerHTML = '';
+  const days = [...byDay.keys()].sort().reverse();
+  for (const d of days) {
+    const tr = document.createElement('tr');
+    const dd = new Date(d + 'T12:00:00');
+    const lbl = dd.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+    tr.innerHTML = '<td>' + esc(lbl) + '</td><td><strong>' + byDay.get(d) + '</strong></td>';
+    tbody.appendChild(tr);
+  }
+  if (!days.length) tbody.innerHTML = '<tr><td colspan="2" class="empty">Aucune donnée.</td></tr>';
+}
+
+async function delReport(id) {
+  if (!confirm('Supprimer ce signalement pour tout le monde ?')) return;
+  try {
+    await sb('/reports?id=eq.' + encodeURIComponent(id), { method: 'DELETE' });
+    await sb('/report_votes?report_id=eq.' + encodeURIComponent(id), { method: 'DELETE' });
+    toast('Signalement supprimé');
+    loadAll();
+  } catch (e) { toast('Échec suppression : ' + String(e.message).slice(0, 80)); }
+}
+
+async function banDevice(dev) {
+  if (!confirm('Bannir cet appareil ?\nIl ne pourra plus signaler ni voter, et tous ses signalements seront supprimés.')) return;
+  try {
+    await sb('/banned_devices', {
+      method: 'POST',
+      body: JSON.stringify({ device: dev }),
+      headers: Object.assign(headers(), { 'Prefer': 'resolution=merge-duplicates,return=minimal' }),
+    });
+    await sb('/reports?device=eq.' + encodeURIComponent(dev), { method: 'DELETE' });
+    toast('Appareil banni, signalements supprimés');
+    loadAll();
+  } catch (e) { toast('Échec bannissement : ' + String(e.message).slice(0, 80)); }
+}
+
+async function unban(dev) {
+  if (!confirm('Débloquer cet appareil ?')) return;
+  try {
+    await sb('/banned_devices?device=eq.' + encodeURIComponent(dev), { method: 'DELETE' });
+    toast('Appareil débloqué');
+    loadAll();
+  } catch (e) { toast('Échec : ' + String(e.message).slice(0, 80)); }
+}
+
+function boot() {
+  if (!getKey()) {
+    document.getElementById('loginCard').style.display = 'block';
+    document.getElementById('dash').style.display = 'none';
+    document.getElementById('logoutBtn').style.display = 'none';
+    return;
+  }
+  document.getElementById('loginCard').style.display = 'none';
+  document.getElementById('dash').style.display = 'block';
+  document.getElementById('logoutBtn').style.display = 'block';
+  loadAll();
+}
+document.getElementById('keyInput').addEventListener('keydown',
+  e => { if (e.key === 'Enter') saveKey(); });
+boot();
+</script>
+</body>
+</html>
