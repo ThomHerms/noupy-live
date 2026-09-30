@@ -39,11 +39,12 @@
   }
   .card h2 { font-size: 15px; margin: 0 0 12px; color: var(--navy); }
   /* Écran clé */
-  #loginCard input {
+  #loginCard input, #unlockCard input {
     width: 100%; padding: 10px 12px; border: 1px solid #d1d5db;
     border-radius: 8px; font-size: 14px; font-family: monospace;
   }
-  #loginCard button, .btn {
+  #loginCard input + p { margin-top: 14px; }
+  #loginCard button, #unlockCard button, .btn {
     background: var(--navy); color: #fff; border: none; border-radius: 8px;
     padding: 10px 16px; font-size: 14px; cursor: pointer; margin-top: 10px;
   }
@@ -92,18 +93,29 @@
 </header>
 
 <main>
-  <!-- Écran de connexion -->
-  <div class="card" id="loginCard">
+  <!-- Première installation : clé + choix du mot de passe -->
+  <div class="card" id="loginCard" style="display:none">
     <h2>Clé d'administration</h2>
     <p>Colle ta clé <strong>service_role</strong> Supabase (Dashboard → Project
     Settings → API keys → onglet <em>« Legacy anon, service_role API keys »</em> —
-    la longue clé qui commence par <code>eyJ</code>). Elle reste dans TON
-    navigateur (localStorage), elle n'est jamais publiée ni envoyée ailleurs
-    qu'à Supabase.<br>
+    la longue clé qui commence par <code>eyJ</code>).<br>
     ⚠️ Les clés <code>sb_secret_…</code> ne fonctionnent pas ici : Supabase les
     refuse depuis un navigateur.</p>
     <input id="keyInput" type="password" placeholder="eyJ…" autocomplete="off">
-    <button onclick="saveKey()">Entrer</button>
+    <p>Choisis un <strong>mot de passe</strong> : la clé sera chiffrée avec dans
+    ce navigateur, et demandée à chaque ouverture de la page. Si tu l'oublies,
+    il suffira de recoller la clé Supabase.</p>
+    <input id="pwSetup" type="password" placeholder="Mot de passe (6 caractères minimum)" autocomplete="new-password">
+    <button onclick="saveKey()">Enregistrer</button>
+  </div>
+
+  <!-- Ouvertures suivantes : mot de passe seul -->
+  <div class="card" id="unlockCard" style="display:none">
+    <h2>Mot de passe</h2>
+    <input id="pwUnlock" type="password" placeholder="Mot de passe" autocomplete="current-password">
+    <button onclick="unlock()">Ouvrir</button>
+    <button style="background:#fff;color:var(--danger);border:1px solid var(--danger)"
+      onclick="logout()">Mot de passe oublié — recoller la clé</button>
   </div>
 
   <!-- Tableau de bord -->
@@ -162,10 +174,23 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const URL_SB = 'https://jbvdyxpfctlvcakmkgkx.supabase.co/rest/v1';
-const KEY_STORE = 'noupy_admin_key';
+const KEY_STORE = 'noupy_admin_key'; // ancien stockage en clair (migré au 1er passage)
+const ENC_STORE = 'noupy_admin_enc'; // clé chiffrée par le mot de passe
 let map = null, markersLayer = null;
+let memKey = ''; // clé déchiffrée : en mémoire seulement, jamais réécrite en clair
 
-function getKey() { try { return localStorage.getItem(KEY_STORE) || ''; } catch (_) { return ''; } }
+function getKey() { return memKey; }
+
+// ── Chiffrement de la clé par mot de passe (Web Crypto : PBKDF2 + AES-GCM) ──
+const te = new TextEncoder(), td = new TextDecoder();
+const b64 = a => btoa(String.fromCharCode(...new Uint8Array(a)));
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function deriveAes(pw, salt) {
+  const base = await crypto.subtle.importKey('raw', te.encode(pw), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: salt, iterations: 150000, hash: 'SHA-256' },
+    base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
 function headers() {
   const k = getKey();
   const h = { 'apikey': k, 'Content-Type': 'application/json' };
@@ -178,15 +203,42 @@ function toast(t) {
   m.textContent = t; m.style.display = 'block';
   clearTimeout(m._t); m._t = setTimeout(() => m.style.display = 'none', 3500);
 }
-function saveKey() {
-  const v = document.getElementById('keyInput').value.trim();
-  if (!v) { toast('Colle ta clé d\'abord'); return; }
-  try { localStorage.setItem(KEY_STORE, v); } catch (_) {}
+async function saveKey() {
+  const key = document.getElementById('keyInput').value.trim();
+  const pw = document.getElementById('pwSetup').value;
+  if (!key) { toast('Colle ta clé d\'abord'); return; }
+  if (key.startsWith('sb_secret')) {
+    toast('Les clés sb_secret_ ne marchent pas dans un navigateur — utilise la service_role (eyJ…)');
+    return;
+  }
+  if (pw.length < 6) { toast('Mot de passe : 6 caractères minimum'); return; }
+  try {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const aes = await deriveAes(pw, salt);
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, aes, te.encode(key));
+    localStorage.setItem(ENC_STORE, JSON.stringify({ s: b64(salt), i: b64(iv), c: b64(ct) }));
+    localStorage.removeItem(KEY_STORE); // fin du stockage en clair
+  } catch (e) { toast('Chiffrement impossible : ' + e); return; }
+  memKey = key;
+  boot();
+}
+async function unlock() {
+  let blob = null;
+  try { blob = JSON.parse(localStorage.getItem(ENC_STORE)); } catch (_) {}
+  if (!blob) { location.reload(); return; }
+  const pw = document.getElementById('pwUnlock').value;
+  try {
+    const aes = await deriveAes(pw, unb64(blob.s));
+    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(blob.i) }, aes, unb64(blob.c));
+    memKey = td.decode(pt);
+  } catch (_) { toast('Mot de passe incorrect'); return; }
   boot();
 }
 function logout() {
-  if (!confirm('Oublier la clé sur ce navigateur ?')) return;
-  try { localStorage.removeItem(KEY_STORE); } catch (_) {}
+  if (!confirm('Oublier la clé et le mot de passe sur ce navigateur ?\n(Il faudra recoller la clé Supabase.)')) return;
+  try { localStorage.removeItem(KEY_STORE); localStorage.removeItem(ENC_STORE); } catch (_) {}
+  memKey = '';
   location.reload();
 }
 
@@ -364,19 +416,38 @@ async function unban(dev) {
 }
 
 function boot() {
-  if (!getKey()) {
-    document.getElementById('loginCard').style.display = 'block';
-    document.getElementById('dash').style.display = 'none';
-    document.getElementById('logoutBtn').style.display = 'none';
-    return;
+  const cards = { loginCard: false, unlockCard: false, dash: false, logoutBtn: false };
+  let legacy = '', hasEnc = false;
+  try {
+    legacy = localStorage.getItem(KEY_STORE) || '';
+    hasEnc = !!localStorage.getItem(ENC_STORE);
+  } catch (_) {}
+
+  if (memKey) {
+    cards.dash = true; cards.logoutBtn = true;
+  } else if (legacy && !hasEnc) {
+    // Migration : la clé était stockée en clair — on la reprend, il ne
+    // manque que le choix du mot de passe.
+    document.getElementById('keyInput').value = legacy;
+    cards.loginCard = true;
+    toast('Ta clé est déjà là : choisis juste ton mot de passe');
+  } else if (hasEnc) {
+    cards.unlockCard = true;
+  } else {
+    cards.loginCard = true;
   }
-  document.getElementById('loginCard').style.display = 'none';
-  document.getElementById('dash').style.display = 'block';
-  document.getElementById('logoutBtn').style.display = 'block';
-  loadAll();
+  for (const id in cards) {
+    document.getElementById(id).style.display = cards[id] ? 'block' : 'none';
+  }
+  if (memKey) loadAll();
+  else if (cards.unlockCard) document.getElementById('pwUnlock').focus();
 }
 document.getElementById('keyInput').addEventListener('keydown',
+  e => { if (e.key === 'Enter') document.getElementById('pwSetup').focus(); });
+document.getElementById('pwSetup').addEventListener('keydown',
   e => { if (e.key === 'Enter') saveKey(); });
+document.getElementById('pwUnlock').addEventListener('keydown',
+  e => { if (e.key === 'Enter') unlock(); });
 boot();
 </script>
 </body>
