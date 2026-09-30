@@ -95,16 +95,25 @@
   <!-- Écran de connexion -->
   <div class="card" id="loginCard">
     <h2>Clé d'administration</h2>
-    <p>Colle ta clé <strong>secrète</strong> Supabase (Dashboard → Project Settings →
-    API keys → <em>service_role</em> ou <em>Secret key</em>). Elle reste dans TON
+    <p>Colle ta clé <strong>service_role</strong> Supabase (Dashboard → Project
+    Settings → API keys → onglet <em>« Legacy anon, service_role API keys »</em> —
+    la longue clé qui commence par <code>eyJ</code>). Elle reste dans TON
     navigateur (localStorage), elle n'est jamais publiée ni envoyée ailleurs
-    qu'à Supabase.</p>
-    <input id="keyInput" type="password" placeholder="sb_secret_… ou eyJ…" autocomplete="off">
+    qu'à Supabase.<br>
+    ⚠️ Les clés <code>sb_secret_…</code> ne fonctionnent pas ici : Supabase les
+    refuse depuis un navigateur.</p>
+    <input id="keyInput" type="password" placeholder="eyJ…" autocomplete="off">
     <button onclick="saveKey()">Entrer</button>
   </div>
 
   <!-- Tableau de bord -->
   <div id="dash" style="display:none">
+    <div class="card" id="errCard" style="display:none;border:1px solid var(--danger)">
+      <h2 style="color:var(--danger)">Impossible de charger les données</h2>
+      <p style="font-size:13px;color:var(--muted);margin:0" id="errText"></p>
+      <button class="btn" onclick="loadAll()">Réessayer</button>
+      <button class="btn" style="background:#fff;color:var(--danger);border:1px solid var(--danger)" onclick="logout()">Changer de clé</button>
+    </div>
     <div class="stats" style="margin-bottom:16px">
       <div class="stat"><div class="num" id="stToday">–</div><div class="lbl">appareils aujourd'hui</div></div>
       <div class="stat"><div class="num" id="stWeek">–</div><div class="lbl">appareils sur 7 jours</div></div>
@@ -213,9 +222,15 @@ async function loadAll() {
     renderReports(reports || []);
     renderBanned(banned || []);
     renderUsage(usage || []);
+    document.getElementById('errCard').style.display = 'none';
     toast('Actualisé ✔');
   } catch (e) {
-    toast('Erreur : clé invalide ou réseau (' + String(e.message).slice(0, 80) + ')');
+    const msg = String(e.message || e);
+    document.getElementById('errCard').style.display = 'block';
+    document.getElementById('errText').textContent =
+      (msg.includes('401') || msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('jwt'))
+        ? 'La clé est refusée par Supabase. Utilise la clé service_role (eyJ…) de l\'onglet Legacy — les clés sb_secret_ ne marchent pas depuis un navigateur.'
+        : 'Détail : ' + msg.slice(0, 200);
   }
 }
 
